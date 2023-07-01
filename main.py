@@ -14,7 +14,10 @@ async def main():
 
     while True:
         try:
-            manager = ServiceManager(SENSOR_HUB_ADDRESS, labels={'room': 'living_room', 'env': 'testing'})
+            manager = ServiceManager(
+                SENSOR_HUB_ADDRESS,
+                labels={'room': 'living_room', 'env': 'testing', 'device': SENSOR_HUB_ADDRESS}
+            )
             await manager.subscribe_all()
             await manager.block()
         except Exception as e:
