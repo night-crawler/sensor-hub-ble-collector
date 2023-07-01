@@ -53,6 +53,9 @@ class AbstractService:
     ):
         gauge = Gauge(name=metric_name, documentation=documentation, unit=unit, **self.metric_props)
 
+        if len(uuid) != 36:
+            uuid = f'0000{uuid}-0000-1000-8000-00805f9b34fb'.lower()
+
         return NotifiableCharacteristic(
             uuid=uuid.lower(),
             deserialize_fn=deserialize_fn,
@@ -81,8 +84,9 @@ class AbstractService:
         raise NotImplementedError()
 
     async def subscribe(self):
-        for ch in self.service.characteristics:
-            await self.client.start_notify(ch, self.state.update_characteristic)
+        for characteristic in self.service.characteristics:
+            logger.info(f'Subscribing to {characteristic.uuid} {characteristic.description}')
+            await self.client.start_notify(characteristic, self.state.update_characteristic)
             self.registry.collect()
 
     @property

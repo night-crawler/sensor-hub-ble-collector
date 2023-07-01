@@ -13,6 +13,12 @@ def deserialize_int(data: bytearray):
     return int.from_bytes(data, byteorder='little', signed=False)
 
 
+def deserialize_float(data: bytearray):
+    import struct
+    value = struct.unpack('f', data)
+    return value[0]
+
+
 def deserialize_temperature(data: bytearray):
     value = int.from_bytes(data, byteorder='little', signed=True)
     value = compute_r(value, 1, -2, 0)

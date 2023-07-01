@@ -1,6 +1,7 @@
 import asyncio
 import prometheus_client
 from loguru import logger
+from prometheus_client import REGISTRY
 
 from service_manager import ServiceManager
 
@@ -18,6 +19,11 @@ async def main():
             await manager.block()
         except Exception as e:
             logger.error(f'Exception: {e}', exc_info=True)
+
+            with REGISTRY._lock:
+                REGISTRY._collector_to_names.clear()
+                REGISTRY._names_to_collectors.clear()
+
             continue
 
 
