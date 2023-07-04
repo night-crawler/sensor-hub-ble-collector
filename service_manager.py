@@ -49,3 +49,7 @@ class ServiceManager:
                 logger.info(f'Service {service.display_name}: {service.state.display_name}')
             await sleep(10)
         logger.error(f'Disconnected from {self.address}')
+
+    def reset_service_metrics(self):
+        for service in self.services:
+            service.reset_state_metrics()

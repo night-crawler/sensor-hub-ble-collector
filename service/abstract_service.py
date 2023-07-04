@@ -6,7 +6,7 @@ from loguru import logger
 from prometheus_client import CollectorRegistry, Gauge
 from prometheus_client.registry import Collector
 
-from characteristic.notifiable_characteristic import NotifiableCharacteristic
+from characteristic.notifiable_characteristic import NotifiableCharacteristic, DerivedMetric
 from service.state import ServiceState
 
 
@@ -43,16 +43,34 @@ class AbstractService:
             'registry': None
         }
 
+    def derived_gauge(
+            self,
+            triggered_by: set[str],
+            value_fn: callable,
+            metric_name: str,
+            documentation: str,
+            unit: str,
+            post_process_fn: callable = lambda x: x
+    ):
+        gauge = Gauge(name=metric_name, documentation=documentation, unit=unit, **self.metric_props)
+        return DerivedMetric(
+            triggered_by=triggered_by,
+            value_fn=value_fn,
+            label_dict=self.labels,
+            metric=self.get_or_create_collector(gauge),
+            post_process_fn=post_process_fn
+        )
+
     def gauge(
             self,
             uuid: str,
             deserialize_fn: callable,
             metric_name: str,
             documentation: str,
-            unit: str
+            unit: str,
+            post_process_fn: callable = lambda x: x
     ):
         gauge = Gauge(name=metric_name, documentation=documentation, unit=unit, **self.metric_props)
-
         if len(uuid) != 36:
             uuid = f'0000{uuid}-0000-1000-8000-00805f9b34fb'.lower()
 
@@ -60,7 +78,8 @@ class AbstractService:
             uuid=uuid.lower(),
             deserialize_fn=deserialize_fn,
             label_dict=self.labels,
-            metric=self.get_or_create_collector(gauge)
+            metric=self.get_or_create_collector(gauge),
+            post_process_fn=post_process_fn
         )
 
     @logger.catch
@@ -87,8 +106,10 @@ class AbstractService:
         for characteristic in self.service.characteristics:
             logger.info(f'Subscribing to {characteristic.uuid} {characteristic.description}')
             await self.client.start_notify(characteristic, self.state.update_characteristic)
-            self.registry.collect()
 
     @property
     def display_name(self):
         return f'{self.namespace}:{self.subsystem}::{self.labels}'
+
+    def reset_state_metrics(self):
+        self.state.reset_metrics()
