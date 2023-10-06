@@ -9,31 +9,41 @@ from service_manager import ServiceManager
 
 class DeviceManager:
     def __init__(self, labels_by_address: Optional[dict[str, dict[str, str]]] = None):
-        self._managers: dict[str, ServiceManager] = {}
+        self._service_managers: dict[str, ServiceManager] = {}
         self.device_labels = labels_by_address or {}
         self.lock = asyncio.Lock()
 
     def _get_or_create_manager(self, address: str) -> ServiceManager:
-        manager = self._managers.get(address)
+        manager = self._service_managers.get(address)
         labels_by_address = self.device_labels.get(address, {})
         if manager is None:
             manager = ServiceManager(address, labels={**labels_by_address, 'device': address})
             logger.info(f'Created manager for {address}')
-            self._managers[address] = manager
+            self._service_managers[address] = manager
         return manager
 
+    def get_expanders(self):
+        for service_manager_address, service_manager in self._service_managers.items():
+            spi_expander = service_manager.get_expander()
+            if spi_expander is not None:
+                yield service_manager_address, service_manager, spi_expander
+
     def remove_manager(self, address: str):
-        self._managers.pop(address, None)
+        self._service_managers.pop(address, None)
 
     async def discover(self):
         while True:
             devices = await BleakScanner.discover()
             logger.info(f'Discovered {len(devices)} devices')
             for device in devices:
+                if device.address.lower() != 'D0:C4:28:22:81:9D'.lower():
+                    continue
+                # if device.address.lower() != 'EE:AA:2A:D7:CF:1C'.lower():
+                #     continue
                 if device.name != 'Sensor Hub BLE':
                     continue
 
-                if device.address in self._managers:
+                if device.address in self._service_managers:
                     continue
 
                 await self.subscribe(device.address)

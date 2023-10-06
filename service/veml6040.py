@@ -64,3 +64,7 @@ class VEML6040Service(AbstractService):
             ),
         )
 
+    async def set_timeout_ms(self, timeout: int):
+        ch = self.service.get_characteristic(self.state.timeout.uuid)
+        data = timeout.to_bytes(4, 'little', signed=False)
+        await self.client.write_gatt_char(ch, data, response=True)

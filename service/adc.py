@@ -17,6 +17,7 @@ class AdcState(ServiceState):
     voltage_6: NotifiableCharacteristic
     sample_count: NotifiableCharacteristic
     elapsed: NotifiableCharacteristic
+    timeout: NotifiableCharacteristic
 
 
 class AdcService(AbstractService):
@@ -62,4 +63,13 @@ class AdcService(AbstractService):
                 uuid='a0e4d2ba-0001-8000-0000-00805f9b34fb', deserialize_fn=deserialize_int,
                 metric_name='elapsed', documentation='Elapsed us', unit='us',
             ),
+            timeout=self.gauge(
+                uuid='a0e4d2ba-0002-8000-0000-00805f9b34fb', deserialize_fn=deserialize_int,
+                metric_name='timeout', documentation='Timeout', unit='ms',
+            ),
         )
+
+    async def set_timeout_ms(self, timeout: int):
+        ch = self.service.get_characteristic(self.state.timeout.uuid)
+        data = timeout.to_bytes(4, 'little', signed=False)
+        await self.client.write_gatt_char(ch, data, response=True)

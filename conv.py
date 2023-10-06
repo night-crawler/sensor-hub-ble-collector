@@ -19,6 +19,10 @@ def deserialize_float(data: bytearray):
     return value[0]
 
 
+def deserialize_noop(data):
+    return data
+
+
 def deserialize_temperature(data: bytearray):
     value = int.from_bytes(data, byteorder='little', signed=True)
     value = compute_r(value, 1, -2, 0)

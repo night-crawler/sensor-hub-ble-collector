@@ -9,6 +9,8 @@ from service.lis2dh12 import LIS2DH12Service
 from service.adc import AdcService
 from service.bme_280 import Bme280Service
 from service.device_information import DeviceInformationService
+from service.expander import ExpanderService
+from service.scd_service import ScdService
 from service.veml6040 import VEML6040Service
 
 
@@ -19,6 +21,11 @@ class ServiceManager:
         '5c853275-723b-4754-a329-969d4bc8121e': Bme280Service,
         '5c853275-823b-4754-a329-969d4bc8121e': LIS2DH12Service,
         '5c853275-923b-4754-a329-969d4bc8121e': VEML6040Service,
+        'ac866789-aaaa-eeee-a329-969d4bc8621e': ExpanderService,
+    }
+
+    I2C_ADDRESS_SERVICE_MAP = {
+        0x62: ScdService
     }
 
     def __init__(self, address: str, labels: dict[str, str]):
@@ -26,6 +33,13 @@ class ServiceManager:
         self.labels = labels
         self.client = BleakClient(self.address)
         self.services: list[AbstractService] = []
+
+    def get_expander(self) -> ExpanderService | None:
+        for service in self.services:
+            if isinstance(service, ExpanderService):
+                return service
+
+        return None
 
     async def subscribe_all(self):
         logger.info(f'Connecting to {self.address}')
@@ -42,6 +56,20 @@ class ServiceManager:
             await service.subscribe()
             logger.info(f'Subscribed to {service.display_name}')
             self.services.append(service)
+
+            if isinstance(service, ExpanderService):
+                i2c_addresses = service.scan_i2c()
+                for address in i2c_addresses:
+                    logger.success(f'Found i2c device at 0x{address:02x}')
+                    i2c_service_class = self.I2C_ADDRESS_SERVICE_MAP.get(address)
+                    if i2c_service_class is None:
+                        logger.warning(f'No i2c service class for 0x{address:02x}')
+                        continue
+                    i2c_svc = i2c_service_class(service, REGISTRY, labels=self.labels)
+                    await i2c_svc.subscribe()
+
+            if isinstance(service, Bme280Service) and self.address == 'D0:C4:28:22:81:9D':
+                await service.set_calibration(15.0, 0.0, 0.0)
 
     async def block(self):
         while self.client.is_connected:

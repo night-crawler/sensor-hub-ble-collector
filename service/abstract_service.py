@@ -104,8 +104,17 @@ class AbstractService:
 
     async def subscribe(self):
         for characteristic in self.service.characteristics:
-            logger.info(f'Subscribing to {characteristic.uuid} {characteristic.description}')
-            await self.client.start_notify(characteristic, self.state.update_characteristic)
+            if characteristic.uuid.lower() in {'a0e4a2ba-1234-4321-0001-00805f9b34fb',
+                                               'a0e4a2ba-1234-4321-0002-00805f9b34fb',
+                                               'a0e4a2ba-1234-4321-0003-00805f9b34fb', }:
+                continue
+
+            logger.info(
+                f'[{self.__class__.__name__}] Subscribing to {characteristic.uuid} {characteristic.description}')
+            try:
+                await self.client.start_notify(characteristic, self.state.update_characteristic)
+            except Exception as e:
+                logger.error(f'Failed to subscribe to characteristic {characteristic.uuid}: {e}')
 
     @property
     def display_name(self):
@@ -113,3 +122,6 @@ class AbstractService:
 
     def reset_state_metrics(self):
         self.state.reset_metrics()
+
+    async def set_timeout_ms(self, timeout: int):
+        raise NotImplementedError()
