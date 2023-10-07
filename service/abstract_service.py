@@ -9,11 +9,17 @@ from prometheus_client.registry import Collector
 from characteristic.notifiable_characteristic import NotifiableCharacteristic, DerivedMetric
 from service.state import ServiceState
 
+import itertools
+
+COUNTER_ITERATOR = itertools.count()
+
 
 class AbstractService:
     namespace: str
     subsystem: str
     state: ServiceState
+
+    counter = 0
 
     def __init__(
             self,
@@ -24,6 +30,7 @@ class AbstractService:
             subsystem: Optional[str] = None,
             labels: Optional[dict] = None,
     ):
+        self.counter = next(COUNTER_ITERATOR)
         self.client = client
         self.service = service
         self.registry = registry
@@ -118,7 +125,7 @@ class AbstractService:
 
     @property
     def display_name(self):
-        return f'{self.namespace}:{self.subsystem}::{self.labels}'
+        return f'{self.namespace}:{self.subsystem}::{self.labels}[{self.counter}]'
 
     def reset_state_metrics(self):
         self.state.reset_metrics()

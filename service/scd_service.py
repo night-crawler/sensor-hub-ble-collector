@@ -49,7 +49,7 @@ class ScdService(AbstractService):
                 finally:
                     await self.expander_service.set_lock(False)
 
-                await asyncio.sleep(60)
+                await asyncio.sleep(0)
 
         asyncio.create_task(f())
 

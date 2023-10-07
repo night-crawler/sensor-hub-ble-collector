@@ -36,9 +36,7 @@ class DeviceManager:
             devices = await BleakScanner.discover()
             logger.info(f'Discovered {len(devices)} devices')
             for device in devices:
-                if device.address.lower() != 'D0:C4:28:22:81:9D'.lower():
-                    continue
-                # if device.address.lower() != 'EE:AA:2A:D7:CF:1C'.lower():
+                # if device.address.lower() != 'FA:6F:EC:EE:4B:36'.lower():
                 #     continue
                 if device.name != 'Sensor Hub BLE':
                     continue

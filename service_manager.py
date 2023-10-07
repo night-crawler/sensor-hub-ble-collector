@@ -57,8 +57,32 @@ class ServiceManager:
             logger.info(f'Subscribed to {service.display_name}')
             self.services.append(service)
 
+            if isinstance(service, Bme280Service) and self.address == 'D0:C4:28:22:81:9D':
+                await service.set_calibration(16.0, 0.0, 0.0)
+
+            if isinstance(service, Bme280Service) and self.address == 'D4:B7:67:56:DC:3B':
+                await service.set_calibration(14.0, 0.3, -850.0)
+
+            if isinstance(service, Bme280Service) and self.address == 'FA:6F:EC:EE:4B:36':
+                await service.set_calibration(1.0, 0.0, 30.0)
+
+            if isinstance(service, Bme280Service) and self.address == 'D3:67:5D:20:A8:42':
+                await service.set_calibration(3.0, 0.0, 140.0)
+
+            if isinstance(service, Bme280Service) and self.address == 'D0:F6:3B:34:4C:1F':
+                await service.set_calibration(6.0, 0.0, 0)
+
             if isinstance(service, ExpanderService):
-                i2c_addresses = service.scan_i2c()
+                try:
+                    i2c_addresses = await service.scan_i2c()
+                except Exception as e:
+                    logger.error(f'Failed to scan i2c: {e}')
+                    continue
+                finally:
+                    await service.set_lock(False)
+
+                # i2c_addresses = [0x62]
+
                 for address in i2c_addresses:
                     logger.success(f'Found i2c device at 0x{address:02x}')
                     i2c_service_class = self.I2C_ADDRESS_SERVICE_MAP.get(address)
@@ -67,9 +91,6 @@ class ServiceManager:
                         continue
                     i2c_svc = i2c_service_class(service, REGISTRY, labels=self.labels)
                     await i2c_svc.subscribe()
-
-            if isinstance(service, Bme280Service) and self.address == 'D0:C4:28:22:81:9D':
-                await service.set_calibration(15.0, 0.0, 0.0)
 
     async def block(self):
         while self.client.is_connected:

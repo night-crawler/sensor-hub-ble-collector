@@ -59,8 +59,9 @@ class Bme280Service(AbstractService):
         p = struct.pack('<f', pressure)
 
         assert len(h) == 4
-        logger.info('Setting humidity calibration to %s', h.hex())
 
         await self.client.write_gatt_char(humidity_ch, h, response=True)
         await self.client.write_gatt_char(temperature_ch, t, response=True)
         await self.client.write_gatt_char(pressure_ch, p, response=True)
+
+        logger.info('Set calibration to humidity={}, temperature={}, pressure={}', humidity, temperature, pressure)

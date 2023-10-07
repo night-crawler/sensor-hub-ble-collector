@@ -304,21 +304,14 @@ class ExpanderService(AbstractService):
         task = loop.create_task(f())
         return loop.run_until_complete(task)
 
-    @log_runtime
-    def scan_i2c(self):
-        @with_timeout(self.lock_timeout)
-        async def f():
-            bundle = self.pack_data_bundle(
-                lock=2, power=True, command=3, address=0, size_write=0, mosi=bytearray(),
-                power_wait=self.power_wait
-            )
-            await self.set_bundle(bundle)
-            return [address for address in await self.read_miso() if address != 0]
-
-        loop = asyncio.get_running_loop()
-        task = loop.create_task(f())
-
-        return loop.run_until_complete(task)
+    @log_runtime_async
+    async def scan_i2c(self):
+        bundle = self.pack_data_bundle(
+            lock=2, power=True, command=3, address=0, size_write=0, mosi=bytearray(),
+            power_wait=self.power_wait
+        )
+        await self.set_bundle(bundle)
+        return [address for address in await self.read_miso() if address != 0]
 
     @log_runtime
     def write(self, address: int, buf: bytearray):
