@@ -3,3 +3,4 @@ bleak==0.20.2
 loguru==0.7.0
 prometheus-client==0.17.0
 nest-asyncio==1.5.8
+pythermalcomfort

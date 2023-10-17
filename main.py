@@ -2,7 +2,6 @@ import asyncio
 from collections import defaultdict
 
 import prometheus_client
-from loguru import logger
 
 from device_manager import DeviceManager
 
